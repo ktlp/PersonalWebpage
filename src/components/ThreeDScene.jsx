@@ -7,11 +7,11 @@ import SimplexNoise from 'simplex-noise'
 import { Canvas } from '@react-three/fiber'
 import { OrbitControls } from '@react-three/drei'
 
-const POINTS_COUNT = 100
-const SPHERE_RADIUS = 3
+const POINTS_COUNT = 1000
+const SPHERE_RADIUS = 1
 const TORUS_RADIUS = 3
 const TUBE_RADIUS = 1
-const STATIONARY_TIME = 3 // seconds
+const STATIONARY_TIME = 6 // seconds
 const TRANSITION_TIME = 0.5 // seconds
 const CYCLE_TIME = STATIONARY_TIME * 2 + TRANSITION_TIME * 2
 const simplex = new SimplexNoise('seed');
@@ -26,7 +26,7 @@ function useGeometryPositions() {
     const posA = new Float32Array(POINTS_COUNT * 3)
     const posB = new Float32Array(POINTS_COUNT * 3)
 
-    const sphere = new THREE.SphereGeometry(SPHERE_RADIUS, 32, 32)
+    const sphere = new THREE.SphereGeometry(SPHERE_RADIUS, 128, 128)
     const torus = new THREE.TorusGeometry(TORUS_RADIUS, TUBE_RADIUS, 16, 100)
     const tempPosition = new THREE.Vector3()
 
@@ -58,7 +58,6 @@ function useMorphingAnimation(positionsA, positionsB, offsets) {
 
     const newPositions = new Float32Array(currentPositions)
     const cycleProgress = (elapsedTime % CYCLE_TIME) / CYCLE_TIME
-    console.log("simplex noise", simplex.noise2D(elapsedTime, 0))
 
     let progress, morphState
 
@@ -78,22 +77,25 @@ function useMorphingAnimation(positionsA, positionsB, offsets) {
 
     for (let i = 0; i < POINTS_COUNT; i++) {
       const i3 = i * 3
+      const noise = SPHERE_RADIUS*0.05*simplex.noise4D(0.5*elapsedTime, i, 1, 1)
+      const noise2 = SPHERE_RADIUS*0.05*simplex.noise4D(0.5*elapsedTime, i, 2, 1)
+      const noise3 = SPHERE_RADIUS*0.05*simplex.noise4D(0.5*elapsedTime, i, 1, 2)
       if (morphState === 'A' || morphState === 'AtoB') {
         if (progress === 0) {
-          for (let j = 0; j < 3; j++) {
-            newPositions[i3 + j] = positionsA[i3 + j] + 0.1*simplex.noise3D(0.0005*elapsedTime, j, offsets[i])
-            
-          }
+          newPositions[i3] = positionsA[i3] + noise
+          newPositions[i3 + 1] = positionsA[i3 + 1] + noise2
+          newPositions[i3 + 2] = positionsA[i3 + 2] + noise3
         }else{
           for (let j = 0; j < 3; j++) {
             newPositions[i3 + j] = positionsA[i3 + j] + (positionsB[i3 + j] - positionsA[i3 + j]) * progress
           }
         }
       } else {
-        if (progress === 1){
-          for (let j = 0; j < 3; j++) {
-            newPositions[i3 + j] = positionsB[i3 + j] +  0.1*simplex.noise3D(0.0005*elapsedTime, j, offsets[i])
-          }
+        if (progress === 1){ 
+          newPositions[i3] = positionsB[i3] + noise
+          newPositions[i3 + 1] = positionsB[i3 + 1] + noise2
+          newPositions[i3 + 2] = positionsB[i3 + 2] + noise3
+
         }
         else{
           for (let j = 0; j < 3; j++) {
