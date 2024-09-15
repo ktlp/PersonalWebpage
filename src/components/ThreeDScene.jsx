@@ -6,15 +6,19 @@ import * as THREE from 'three'
 import SimplexNoise from 'simplex-noise'
 import { Canvas } from '@react-three/fiber'
 import { OrbitControls } from '@react-three/drei'
+import { STLLoader } from 'three/examples/jsm/loaders/STLLoader'
+import { useLoader } from '@react-three/fiber'
 
 const POINTS_COUNT = 1000
 const SPHERE_RADIUS = 1
 const TORUS_RADIUS = 3
 const TUBE_RADIUS = 1
-const STATIONARY_TIME = 6 // seconds
+const STATIONARY_TIME = 3 // seconds
 const TRANSITION_TIME = 0.5 // seconds
 const CYCLE_TIME = STATIONARY_TIME * 2 + TRANSITION_TIME * 2
 const simplex = new SimplexNoise('seed');
+
+
 
 function generateRandomNumbers(count) {
   return Array.from({ length: count }, () => Math.random());
@@ -22,29 +26,30 @@ function generateRandomNumbers(count) {
 
 
 function useGeometryPositions() {
+  const [meshA, meshB] = useLoader(STLLoader, ['/mail.stl', '/phone.stl'])
+
   return useMemo(() => {
     const posA = new Float32Array(POINTS_COUNT * 3)
     const posB = new Float32Array(POINTS_COUNT * 3)
 
-    const sphere = new THREE.SphereGeometry(SPHERE_RADIUS, 128, 128)
-    const torus = new THREE.TorusGeometry(TORUS_RADIUS, TUBE_RADIUS, 16, 100)
     const tempPosition = new THREE.Vector3()
 
     for (let i = 0; i < POINTS_COUNT; i++) {
-      // Sphere positions
-      const faceIndexA = Math.floor(Math.random() * sphere.attributes.position.count / 3)
-      tempPosition.fromBufferAttribute(sphere.attributes.position, faceIndexA * 3)
+      // Mesh A positions
+      const faceIndexA = Math.floor(Math.random() * meshA.attributes.position.count / 3)
+      tempPosition.fromBufferAttribute(meshA.attributes.position, faceIndexA * 3)
       posA.set([tempPosition.x, tempPosition.y, tempPosition.z], i * 3)
 
-      // Torus positions
-      const faceIndexB = Math.floor(Math.random() * torus.attributes.position.count / 3)
-      tempPosition.fromBufferAttribute(torus.attributes.position, faceIndexB * 3)
+      // Mesh B positions
+      const faceIndexB = Math.floor(Math.random() * meshB.attributes.position.count / 3)
+      tempPosition.fromBufferAttribute(meshB.attributes.position, faceIndexB * 3)
       posB.set([tempPosition.x, tempPosition.y, tempPosition.z], i * 3)
     }
 
     return { positionsA: posA, positionsB: posB }
-  }, [])
+  }, [meshA, meshB])
 }
+
 
 function useMorphingAnimation(positionsA, positionsB, offsets) {
   const [currentPositions, setCurrentPositions] = useState(null)
