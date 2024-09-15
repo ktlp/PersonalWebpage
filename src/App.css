@@ -1,0 +1,33 @@
+:root {
+  --grid-color-light: rgba(49, 86, 52, 0.02); /* Soft blue for light theme */
+  --grid-color-dark: rgba(128, 128, 128, 0.05); /* Soft grey for dark theme */
+  --grid-size: 10px;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  background-color: var(--background);
+  background-image: 
+    linear-gradient(var(--grid-color-light) 0.1em, transparent 0.4em),
+    linear-gradient(90deg, var(--grid-color-light) 0.1em, transparent 0.4em);
+  background-size: var(--grid-size) var(--grid-size);
+}
+
+.dark body {
+  background-image: 
+    linear-gradient(var(--grid-color-dark) 0.1em, transparent 0.4em),
+    linear-gradient(90deg, var(--grid-color-dark) 0.1em, transparent 0.4em);
+}
+
+main {
+  background-color: transparent;
+}
+
+h1, h2 {
+  margin-bottom: 1rem;
+}
+
+ul {
+  padding-left: 1.5rem;
+}
