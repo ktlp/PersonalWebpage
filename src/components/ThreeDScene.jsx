@@ -1,19 +1,20 @@
 import React, { useRef, useMemo, useState, useEffect, useCallback } from 'react'
-import { useFrame } from '@react-three/fiber'
+import { useFrame, useThree } from '@react-three/fiber'
 import { Points, PointMaterial } from '@react-three/drei'
 import { useTheme } from 'next-themes'
 import * as THREE from 'three'
 import SimplexNoise from 'simplex-noise'
 import { Canvas } from '@react-three/fiber'
-import { OrbitControls } from '@react-three/drei'
+import { OrbitControls, PerspectiveCamera, CameraShake } from '@react-three/drei'
 import { STLLoader } from 'three/examples/jsm/loaders/STLLoader'
 import { useLoader } from '@react-three/fiber'
+import { MeshSurfaceSampler } from 'three/examples/jsm/math/MeshSurfaceSampler'
 
-const POINTS_COUNT = 1000
+const POINTS_COUNT = 1800
 const SPHERE_RADIUS = 1
 const TORUS_RADIUS = 3
 const TUBE_RADIUS = 1
-const STATIONARY_TIME = 3 // seconds
+const STATIONARY_TIME = 4 // seconds
 const TRANSITION_TIME = 0.5 // seconds
 const CYCLE_TIME = STATIONARY_TIME * 2 + TRANSITION_TIME * 2
 const simplex = new SimplexNoise('seed');
@@ -26,23 +27,26 @@ function generateRandomNumbers(count) {
 
 
 function useGeometryPositions() {
-  const [meshA, meshB] = useLoader(STLLoader, ['/mail.stl', '/phone.stl'])
+  const [meshA, meshB] = useLoader(STLLoader, ['/at.stl', '/envelope.stl'])
 
   return useMemo(() => {
     const posA = new Float32Array(POINTS_COUNT * 3)
     const posB = new Float32Array(POINTS_COUNT * 3)
 
     const tempPosition = new THREE.Vector3()
+    const tempNormal = new THREE.Vector3()
+
+    // Create MeshSurfaceSamplers for both meshes
+    const samplerA = new MeshSurfaceSampler(new THREE.Mesh(meshA)).build()
+    const samplerB = new MeshSurfaceSampler(new THREE.Mesh(meshB)).build()
 
     for (let i = 0; i < POINTS_COUNT; i++) {
-      // Mesh A positions
-      const faceIndexA = Math.floor(Math.random() * meshA.attributes.position.count / 3)
-      tempPosition.fromBufferAttribute(meshA.attributes.position, faceIndexA * 3)
+      // Sample points from Mesh A
+      samplerA.sample(tempPosition, tempNormal)
       posA.set([tempPosition.x, tempPosition.y, tempPosition.z], i * 3)
 
-      // Mesh B positions
-      const faceIndexB = Math.floor(Math.random() * meshB.attributes.position.count / 3)
-      tempPosition.fromBufferAttribute(meshB.attributes.position, faceIndexB * 3)
+      // Sample points from Mesh B
+      samplerB.sample(tempPosition, tempNormal)
       posB.set([tempPosition.x, tempPosition.y, tempPosition.z], i * 3)
     }
 
@@ -141,7 +145,7 @@ function MorphingPoints() {
       <PointMaterial 
         transparent 
         color={theme === 'dark' ? "#ffffff" : "#000000"} 
-        size={0.05} 
+        size={0.2} 
         sizeAttenuation 
         depthWrite={false} 
       />
@@ -149,17 +153,30 @@ function MorphingPoints() {
   )
 }
 
+function Camera() {
+  return <PerspectiveCamera makeDefault position={[0, 0, 30]} fov={35} zoom={2}  />
+}
+
+function Rig() {
+  const [vec] = useState(() => new THREE.Vector3())
+  const { camera, mouse } = useThree()
+  useFrame(() => camera.position.lerp(vec.set(0, 0.0, 30), 0.45))
+  return <CameraShake maxYaw={0.0210} maxPitch={0.0210} minPitch={-0.0210} maxRoll={0.0} yawFrequency={0.0510} pitchFrequency={0.0310} rollFrequency={0.0310} />
+}
+
 function ThreeDScene() {
   return (
     <div style={{ width: '100%', height: '400px', position: 'relative' }}>
       <Canvas
-        camera={{ position: [0, 0, 15], fov: 60 }}
         style={{ position: 'absolute', top: 0, left: 0 }}
         gl={{ alpha: true, antialias: true }}
       >
-        <OrbitControls />
+        <Camera />
+        {/* <OrbitControls makeDefault maxPolarAngle={Math.PI * 11/18} maxAzimuthAngle={Math.PI / 30} minAzimuthAngle={-Math.PI / 30} minPolarAngle={Math.PI * 7 / 18} maxZoom={10} enablePan={false}/> */}
+        <OrbitControls enableZoom={false} enablePan={false}/>
         <ambientLight intensity={0.5} />
         <MorphingPoints />
+        <Rig />
       </Canvas>
     </div>
   )

@@ -1,7 +1,5 @@
 import React from 'react'
-import { Canvas } from '@react-three/fiber'
-import { OrbitControls } from '@react-three/drei'
-import { MorphingPoints } from '../components/ThreeDScene'
+import ThreeDScene from '../components/ThreeDScene'
 
 function Contact() {
   return (
@@ -10,15 +8,7 @@ function Contact() {
       
       {/* 3D Scene */}
       <div className="w-full h-[400px] mb-8">
-        <Canvas
-          camera={{ position: [0, 0, 15], fov: 60 }}
-          style={{ width: '100%', height: '100%' }}
-          gl={{ alpha: true, antialias: true }}
-        >
-          <OrbitControls />
-          <ambientLight intensity={0.5} />
-          <MorphingPoints />
-        </Canvas>
+        <ThreeDScene />
       </div>
 
       {/* Contact form or information */}
